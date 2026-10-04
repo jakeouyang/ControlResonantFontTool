@@ -29,11 +29,11 @@ public sealed class MainForm : Form
         Controls.Add(layout);
         var header = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 4 };
         header.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        header.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 92)); header.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 42)); header.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 42));
+        header.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 120)); header.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 42)); header.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 42));
         var title = new Label { Text = "::  CONTROL Resonant Font Tool", Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft, Font = new Font("Segoe UI", 18) };
         title.MouseDown += (_, e) => { if (e.Button == MouseButtons.Left) { ReleaseCapture(); SendMessage(Handle, 0xA1, (IntPtr)2, IntPtr.Zero); } };
         header.Controls.Add(title, 0, 0);
-        header.Controls.Add(Button("GitHub", () => Process.Start(new ProcessStartInfo("https://github.com/jakeouyang/ControlResonantFontTool") { UseShellExecute = true })), 1, 0);
+        Button gitHub = Button("GitHub", () => Process.Start(new ProcessStartInfo("https://github.com/jakeouyang/ControlResonantFontTool") { UseShellExecute = true })); gitHub.Width = 108; header.Controls.Add(gitHub, 1, 0);
         header.Controls.Add(Button("—", () => WindowState = FormWindowState.Minimized), 2, 0);
         header.Controls.Add(Button("×", Close), 3, 0); layout.Controls.Add(header, 0, 0);
         layout.Controls.Add(new Label { Text = "简体中文字体替换  /  自动备份 · 支持还原", Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft, ForeColor = Color.Silver }, 0, 1);
@@ -48,7 +48,7 @@ public sealed class MainForm : Form
         panel.Controls.Add(log); layout.Controls.Add(panel, 0, 6);
         var footer = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, Margin = Padding.Empty };
         footer.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100)); footer.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 120));
-        footer.Controls.Add(status); footer.Controls.Add(new Label { Text = "v1.0", Dock = DockStyle.Fill, ForeColor = Color.Gray, TextAlign = ContentAlignment.MiddleRight, Font = new Font("Segoe UI", 9) }); layout.Controls.Add(footer, 0, 7);
+        footer.Controls.Add(status); footer.Controls.Add(new Label { Text = "v1.0.1", Dock = DockStyle.Fill, ForeColor = Color.Gray, TextAlign = ContentAlignment.MiddleRight, Font = new Font("Segoe UI", 9) }); layout.Controls.Add(footer, 0, 7);
         Append("请选择游戏目录和 TTF / OTF 字体。备份会保留在游戏 data_pack2/pc 目录中。");
         Append("字体需自行包含所需汉字；结构校验不能保证完整字符覆盖。首次使用请在游戏中验证显示效果。");
         FormClosing += (_, e) => { if (busy) { e.Cancel = true; status.Text = "正在操作，请等待完成"; } };

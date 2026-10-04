@@ -7,6 +7,8 @@
 [![Release](https://img.shields.io/github/v/release/jakeouyang/ControlResonantFontTool)](https://github.com/jakeouyang/ControlResonantFontTool/releases)
 [![License](https://img.shields.io/github/license/jakeouyang/ControlResonantFontTool)](LICENSE)
 
+<img src="docs/preview.png" width="720" alt="程序界面预览">
+
 ## 下载
 
 前往 [Releases](https://github.com/jakeouyang/ControlResonantFontTool/releases) 下载最新版压缩包，解压后直接运行 `ControlResonantFontTool.exe`。无需同目录 DLL 或额外安装运行环境，运行所需的原生组件会自动释放到系统临时缓存。
@@ -53,6 +55,8 @@ dotnet publish -c Release
 # English
 
 Standalone Simplified Chinese font replacement tool for CONTROL Resonant, with a red-and-black interface, automatic backup, and restore.
+
+<img src="docs/preview.png" width="720" alt="Application preview">
 
 ## Download
 
