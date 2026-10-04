@@ -1,0 +1,44 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Publish
+        shell: pwsh
+        run: |
+          if ("${env:GITHUB_REF_NAME}" -match '^v(\d+(\.\d+)*)$') {
+            dotnet publish -c Release "-p:Version=$($Matches[1])"
+          } else {
+            dotnet publish -c Release
+          }
+
+      - name: Package
+        shell: pwsh
+        run: |
+          $tag = "${env:GITHUB_REF_NAME}" -replace '^v',''
+          if ($tag -eq 'main' -or $tag -notmatch '^[0-9]') { $tag = '0.0.0-dev' }
+          Compress-Archive -Path "bin/Release/net9.0-windows/win-x64/publish/ControlResonantFontTool.exe" `
+            -DestinationPath "ControlResonantFontTool-$tag.zip"
+          "ZIP=ControlResonantFontTool-$tag.zip" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.ZIP }}
+          generate_release_notes: true
