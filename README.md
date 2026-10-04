@@ -17,7 +17,7 @@
 
 1. 退出游戏，选择游戏根目录或 `data_pack2/pc`。
 2. 选择包含所需汉字的独立 TTF / OTF 字体，点击“开始替换”。Regular 与 Black 两个简中字体槽位使用同一字体。
-3. 点击“还原字体”恢复首次替换前的状态。请保留游戏 `data_pack2/pc` 下的 `_fonttool_backup` 文件夹。
+3. 点击“还原字体”恢复当前游戏版本首次替换前的状态。请保留游戏 `data_pack2/pc` 下的 `_fonttool_backup` 文件夹。
 
 支持 TTF 和含 CFF 轮廓的 OTF，不支持 TTC 字体集合。字体结构校验不代表完整汉字覆盖，请在游戏中确认显示效果。
 
@@ -25,10 +25,10 @@
 
 - 已有兼容备份会自动沿用并统一目录名称，无需手动改名。发现多份可能冲突的备份时，程序会停止操作，保留所有备份。
 - 没有可用的替换记录时无法还原。请确认选择了正确的游戏目录，并保留完整备份。
-- 当前游戏文件与历史备份不一致时，程序会拒绝替换。请先恢复此前的修改；若游戏已更新，请验证游戏文件，并将历史备份移到游戏目录外妥善保留。不要用旧备份覆盖更新后的游戏文件。
+- 游戏更新后再次替换时，若当前资源校验通过且索引已不再引用本工具的字体资源，旧备份会自动移至 `_fonttool_backup.archived-*`，并为当前版本建立新备份，无需删除备份或 `.fonttool.lock`。归档和旧字体资源保留。此校验不代表官方原版认证，其他工具的有效修改会成为当前备份的一部分。
 - 若此前使用的工具生成了不同格式的备份，请使用当时的工具恢复该次修改。
 - 包含简中字体的开发包 MOD 可能覆盖本工具的替换效果，使用前请先停用冲突的字体 MOD。
-- 游戏更新或其他工具改变资源索引后，程序会拒绝自动还原，避免覆盖其他修改。
+- 更新后点击还原，满足上述校验条件时仅归档旧记录、保留当前游戏文件；若仍引用旧字体补丁或资源不完整则停止，请验证游戏文件后重试。不同格式的 `_fontmod_backup` 历史备份冲突仍需手动处理。
 
 本工具直接更新基础资源索引，使用独立字体资源文件；不生成开发包 MOD，不覆盖或截断原游戏资源包，也不修改其他工具。
 
@@ -66,7 +66,7 @@ Get the latest archive from [Releases](https://github.com/jakeouyang/ControlReso
 
 1. Close the game, select its root folder or `data_pack2/pc`.
 2. Choose a standalone TTF/OTF font containing the required Chinese glyphs and click Replace. Both SC Regular and Black slots use the selected font.
-3. Click Restore to roll back to the state before the first replacement. Keep the `_fonttool_backup` folder under `data_pack2/pc`.
+3. Click Restore to roll back to the state before the first replacement for the current game version. Keep the `_fonttool_backup` folder under `data_pack2/pc`.
 
 TTF and OTF with CFF outlines are supported; TTC collections are not. Structural validation does not guarantee full glyph coverage — verify in-game rendering.
 
@@ -74,10 +74,10 @@ TTF and OTF with CFF outlines are supported; TTC collections are not. Structural
 
 - Existing compatible backups are recognized and migrated automatically; ambiguous backups block the operation without touching either copy.
 - Restore requires a complete replacement record and backup.
-- If the current game files no longer match the stored backup, replacement and restore are refused. Restore previous edits first, or verify game files after an update and keep old backups outside the game folder.
+- After an update, a valid current index with no remaining references to this tool's font blobs becomes the new baseline. Old backups are preserved in `_fonttool_backup.archived-*`; old font blobs are retained. No manual deletion of backups or `.fonttool.lock` is needed. Validation does not certify an official unmodified installation; valid changes from other tools become part of the new baseline.
 - Backups produced by other tools in a different format must be restored with the tool that created them.
 - Development mods containing SC fonts may override this tool's replacement; disable conflicting font mods first.
-- After a game update or resource-index changes by other tools, automatic restore is refused to avoid overwriting other modifications.
+- Restore after an update archives the stale record and preserves current files when the same checks pass. Remaining patch references or incomplete resources block the operation; verify game files and retry. Conflicting legacy `_fontmod_backup` backups still require manual handling.
 
 The tool patches the base resource index and uses a standalone font blob; it does not create development mods, never overwrites or truncates original game blobs, and does not modify other tools.
 

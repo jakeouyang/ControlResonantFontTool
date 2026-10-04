@@ -125,7 +125,11 @@ public static class FontService
             throw new IOException("当前游戏文件与已有历史备份不一致，无法安全替换。请先恢复此前的修改；若游戏已更新，请验证游戏文件，并将历史备份移到游戏目录外保留后再操作。");
         Directory.CreateDirectory(backup);
         string original = Path.Combine(backup, TocName);
-        if (File.Exists(original) && Hash(original) != originalHash) throw new IOException("备份属于其他游戏版本，请保留备份并检查游戏更新。");
+        if (File.Exists(original) && Hash(original) != originalHash)
+        {
+            ArchiveSupersededBackup(pc, backup, originalHash, log);
+            Directory.CreateDirectory(backup);
+        }
         if (!File.Exists(original)) { File.Copy(tocPath, original); if (Hash(original) != originalHash) throw new IOException("备份校验失败。"); }
         log("已备份基础索引，正在生成字体资源。");
         string name = "fonttool-" + Guid.NewGuid().ToString("N") + ".rmdblob", blob = Path.Combine(pc, name);
@@ -170,7 +174,12 @@ public static class FontService
     {
         if (!File.Exists(Path.Combine(backup, "state.json"))) throw new IOException("没有可用的替换记录，无法还原。请确认已在当前游戏目录执行过替换，并保留了完整备份。");
         var state = ReadState(backup); string tocPath = Path.Combine(pc, TocName), current = Hash(tocPath);
-        if (current != state.OriginalHash && current != state.PatchedHash) throw new IOException("游戏索引已被更新或其他工具修改，拒绝覆盖。请先验证游戏文件。");
+        if (current != state.OriginalHash && current != state.PatchedHash)
+        {
+            ArchiveSupersededBackup(pc, backup, current, log);
+            log("当前索引已不再引用本工具的字体补丁，无需还原；已保留当前游戏文件。");
+            return;
+        }
         // Resolve the original TOC's relative blob paths from pc, not the backup directory.
         string verify = Path.Combine(pc, ".fonttool-restore-" + Guid.NewGuid().ToString("N") + ".rmdtoc");
         try { File.Copy(Path.Combine(backup, TocName), verify); Verify(TocFile.Load(verify)); }
@@ -182,5 +191,22 @@ public static class FontService
         AtomicWrite(tocPath, File.ReadAllBytes(Path.Combine(backup, TocName)));
         if (File.Exists(blob)) File.Delete(blob);
         log("已还原替换前的基础索引；原始资源和备份保留。");
+    }
+
+    static void ArchiveSupersededBackup(string pc, string backup, string currentHash, Action<string> log)
+    {
+        string tocPath = Path.Combine(pc, TocName);
+        var toc = TocFile.Load(tocPath);
+        // A changed index is not proof of an official update. Only adopt a valid
+        // current baseline once all references to our previous patches are gone.
+        if (toc.BlobFiles.Any(p => Path.GetFileName(p).StartsWith("fonttool-", StringComparison.OrdinalIgnoreCase)))
+            throw new IOException("游戏索引已改变，但仍引用本工具的字体资源，无法安全切换备份。请先验证游戏文件后重试。");
+        Verify(toc);
+        GameClosed();
+        if (Hash(tocPath) != currentHash) throw new IOException("检查期间游戏索引已改变，已中止。");
+        string archive = backup + ".archived-" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss") + "-" + Guid.NewGuid().ToString("N");
+        Directory.Move(backup, archive);
+        // Keep old blobs too: other indexes may still reference them.
+        log("检测到游戏索引版本变化，当前资源校验通过。旧备份已归档：" + archive);
     }
 }
