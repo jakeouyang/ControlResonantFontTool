@@ -2,7 +2,7 @@
 
 简体中文 | [English](#english)
 
-独立的《控制 共鸣》（CONTROL Resonant）简体中文字体替换工具，提供红黑界面、自动备份和字体还原功能。
+独立的《控制：共振》（CONTROL Resonant）简体中文字体替换工具，提供红黑界面、自动备份和字体还原功能。
 
 [![Release](https://img.shields.io/github/v/release/jakeouyang/ControlResonantFontTool)](https://github.com/jakeouyang/ControlResonantFontTool/releases)
 [![License](https://img.shields.io/github/license/jakeouyang/ControlResonantFontTool)](LICENSE)

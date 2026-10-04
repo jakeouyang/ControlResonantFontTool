@@ -48,7 +48,7 @@ public sealed class MainForm : Form
         panel.Controls.Add(log); layout.Controls.Add(panel, 0, 6);
         var footer = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, Margin = Padding.Empty };
         footer.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100)); footer.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 120));
-        footer.Controls.Add(status); footer.Controls.Add(new Label { Text = "v1.0.1", Dock = DockStyle.Fill, ForeColor = Color.Gray, TextAlign = ContentAlignment.MiddleRight, Font = new Font("Segoe UI", 9) }); layout.Controls.Add(footer, 0, 7);
+        footer.Controls.Add(status); footer.Controls.Add(new Label { Text = "v1.0.2", Dock = DockStyle.Fill, ForeColor = Color.Gray, TextAlign = ContentAlignment.MiddleRight, Font = new Font("Segoe UI", 9) }); layout.Controls.Add(footer, 0, 7);
         Append("请选择游戏目录和 TTF / OTF 字体。备份会保留在游戏 data_pack2/pc 目录中。");
         Append("字体需自行包含所需汉字；结构校验不能保证完整字符覆盖。首次使用请在游戏中验证显示效果。");
         FormClosing += (_, e) => { if (busy) { e.Cancel = true; status.Text = "正在操作，请等待完成"; } };
