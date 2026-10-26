@@ -14,10 +14,14 @@ public static class FontPatch
         (e.Name.Equals("notosanssc-regular.ttf", StringComparison.OrdinalIgnoreCase) ||
          e.Name.Equals("notosanssc-black.ttf", StringComparison.OrdinalIgnoreCase))).ToArray();
 
-    public static byte[] Build(TocFile toc, byte[] font, string blobName, string blobPath)
+    public static bool IsBlack(ResourceEntry entry) => entry.Name.Equals("notosanssc-black.ttf", StringComparison.OrdinalIgnoreCase);
+
+    public static byte[] Build(TocFile toc, byte[] font, string blobName, string blobPath) => Build(toc, font, font, blobName, blobPath);
+
+    public static byte[] Build(TocFile toc, byte[] regular, byte[] bold, string blobName, string blobPath)
     {
         var entries = Targets(toc);
-        if (entries.Length != 2 || toc.BlobCount >= 65535) throw new InvalidDataException("未找到预期的两个简体中文字体槽位。");
+        if (entries.Length != 2 || entries.Count(IsBlack) != 1 || toc.BlobCount >= 65535) throw new InvalidDataException("未找到预期的两个简体中文字体槽位。");
         byte[] path = Encoding.UTF8.GetBytes("../pc/" + blobName);
         int delta = (path.Length + 7) & ~7;
         int insert = toc.BlobCount * 24, poolEnd = toc.StrEnd + 24;
@@ -36,13 +40,25 @@ public static class FontPatch
         U(header, 56, (uint)records); U(header, 80, (uint)idx); U(header, 84, (uint)(toc.IdxSize + entries.Length * 16));
         using (var blob = new FileStream(blobPath, FileMode.CreateNew, FileAccess.Write, FileShare.None))
         {
-            // Both slots can safely share the same immutable font payload.
-            byte[] encoded = Literal(font); blob.Write(encoded); blob.Flush(true);
+            byte[] regularEncoded = Literal(regular);
+            blob.Write(regularEncoded);
+            long boldOffset = 0;
+            byte[] boldEncoded = regularEncoded;
+            if (!regular.AsSpan().SequenceEqual(bold))
+            {
+                boldOffset = blob.Position;
+                boldEncoded = Literal(bold);
+                blob.Write(boldEncoded);
+            }
+            blob.Flush(true);
             for (int i = 0; i < entries.Length; i++)
             {
                 var e = entries[i]; int desc = toc.IdxSize + i * 16, io = info + e.EntryIndex * 32;
+                byte[] font = IsBlack(e) ? bold : regular;
+                byte[] encoded = IsBlack(e) ? boldEncoded : regularEncoded;
+                ulong offset = IsBlack(e) ? (ulong)boldOffset : 0;
                 U(body, io, (uint)desc); U(body, io + 4, 16); U(body, io + 20, (uint)font.Length);
-                Q(body, idx + desc, ((ulong)toc.BlobCount << 8) | 0x10);
+                Q(body, idx + desc, (offset << 24) | ((ulong)toc.BlobCount << 8) | 0x10);
                 U(body, idx + desc + 8, (uint)font.Length); U(body, idx + desc + 12, (uint)encoded.Length);
                 int record = records + e.RecOff, metadata = checked(8 + (int)Read(body, record + 4) * 8);
                 if (metadata + 16 > e.RecLen || Read(body, record + metadata) != 1 ||
@@ -50,7 +66,7 @@ public static class FontPatch
                     throw new InvalidDataException("不支持的字体元数据结构。");
                 Q(body, record + metadata + 4, (ulong)font.Length); U(body, record + metadata + 12, Crc32.Compute(font));
             }
-            Q(body, insert + 16, (ulong)encoded.Length);
+            Q(body, insert + 16, (ulong)blob.Length);
         }
         return Rebuild(header, body);
     }

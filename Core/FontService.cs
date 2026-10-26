@@ -107,13 +107,23 @@ public static class FontService
         if (Hash(Path.Combine(backup, TocName)) != state.OriginalHash) throw new InvalidDataException("备份 TOC 校验失败。");
         return state;
     }
-    public static void Replace(string root, string fontFile, Action<string> log)
+    public static void Replace(string root, string fontFile, Action<string> log) => Replace(root, fontFile, fontFile, log);
+
+    public static void Replace(string root, string regularFile, string boldFile, Action<string> log)
     {
         GameClosed(); string pc = FindPc(root), tocPath = Path.Combine(pc, TocName);
         using var operationLock = new FileStream(Path.Combine(pc, ".fonttool.lock"), FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
         string backup = BackupDirectory(pc);
-        if (new FileInfo(fontFile).Length > 128 * 1024 * 1024) throw new InvalidDataException("字体超过 128 MB。");
-        byte[] font = File.ReadAllBytes(fontFile); ValidateFont(font); log("字体结构校验通过。");
+        byte[] ReadFont(string path, string role)
+        {
+            if (new FileInfo(path).Length > 128 * 1024 * 1024) throw new InvalidDataException(role + "字体超过 128 MB。");
+            byte[] data = File.ReadAllBytes(path);
+            ValidateFont(data);
+            log(role + "字体结构校验通过。");
+            return data;
+        }
+        byte[] regular = ReadFont(regularFile, "常规体"), bold = ReadFont(boldFile, "粗体");
+        if (regular.AsSpan().SequenceEqual(bold)) log("提示：两个字体内容相同，替换后不会产生粗细区别。请使用同一字体的不同字重文件。");
         foreach (string path in Directory.EnumerateFiles(pc, "*-development.rmdtoc"))
             if (FontPatch.Targets(TocFile.Load(path)).Length > 0)
                 throw new IOException("发现包含简中字体的开发包，可能覆盖本工具的替换。请先停用该字体 MOD：" + Path.GetFileName(path));
@@ -137,10 +147,10 @@ public static class FontService
         bool journaled = false;
         try
         {
-            byte[] patched = FontPatch.Build(toc, font, name, blob); File.WriteAllBytes(candidate, patched);
+            byte[] patched = FontPatch.Build(toc, regular, bold, name, blob); File.WriteAllBytes(candidate, patched);
             var check = TocFile.Load(candidate); Verify(check);
             foreach (var e in FontPatch.Targets(check))
-                if (!check.Extract(e).data.AsSpan().SequenceEqual(font)) throw new InvalidDataException("字体回读不一致。");
+                if (!check.Extract(e).data.AsSpan().SequenceEqual(FontPatch.IsBlack(e) ? bold : regular)) throw new InvalidDataException("字体回读不一致：" + e.Name);
             var changed = FontPatch.Targets(toc).Select(e => e.EntryIndex).ToHashSet();
             var byIndex = check.Entries.ToDictionary(e => e.EntryIndex);
             if (check.Entries.Count != toc.Entries.Count) throw new InvalidDataException("资源数量改变。");
@@ -156,7 +166,7 @@ public static class FontService
             GameClosed();
             if (Hash(tocPath) != originalHash) throw new IOException("操作期间游戏索引已改变，已中止。");
             AtomicWrite(tocPath, patched);
-            log("替换完成：两个简中字体槽位已更新。原始 blob 未改动；可随时还原。");
+            log("替换完成：Regular 已写入常规体，Black 已写入粗体；可随时还原。");
         }
         finally
         {

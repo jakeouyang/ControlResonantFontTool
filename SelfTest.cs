@@ -115,6 +115,38 @@ internal static class SelfTest
         FontService.Replace(destination, fontPath, lines.Add);
         FontService.Restore(destination, lines.Add);
         Assert(FontService.Hash(tocPath) == baselineHash, "Replacement works after update-aware restore with existing lock file");
+        byte[] regular = source.Extract(targets.Single(e => !FontPatch.IsBlack(e))).data;
+        byte[] bold = source.Extract(targets.Single(FontPatch.IsBlack)).data;
+        Assert(!regular.AsSpan().SequenceEqual(bold), "Regular and Black fixtures contain distinct real font data");
+        string regularPath = Path.Combine(destination, "regular.ttf"), boldPath = Path.Combine(destination, "bold.ttf");
+        File.WriteAllBytes(regularPath, regular); File.WriteAllBytes(boldPath, bold);
+        void AssertWeights(string message)
+        {
+            var check = TocFile.Load(tocPath); FontService.Verify(check);
+            Assert(FontPatch.Targets(check).All(e => check.Extract(e).data.AsSpan().SequenceEqual(FontPatch.IsBlack(e) ? bold : regular)), message);
+            Assert(FontPatch.Targets(check).Select(e => e.Chunks[0].Offset).Distinct().Count() == 2, "Different font weights reference distinct payload offsets");
+        }
+        FontService.Replace(destination, regularPath, boldPath, lines.Add);
+        AssertWeights("Two-font replacement maps Regular and Black by name and reads both back exactly");
+        string dualHash = FontService.Hash(tocPath);
+        string invalidBold = Path.Combine(destination, "invalid-bold.ttf"); File.WriteAllBytes(invalidBold, new byte[24]);
+        Reject(() => FontService.Replace(destination, regularPath, invalidBold, lines.Add), "Invalid bold font rejected before touching installed patch");
+        Assert(FontService.Hash(tocPath) == dualHash, "Invalid bold selection preserves existing index");
+        FontService.Replace(destination, regularPath, boldPath, lines.Add);
+        AssertWeights("Repeated two-font replacement preserves both weights");
+        FontService.Restore(destination, lines.Add);
+        Assert(FontService.Hash(tocPath) == baselineHash, "Two-font replacement restores to original baseline");
+        // TOC order must not determine which file is used for which weight.
+        copy.Entries.Reverse();
+        string reversedBlob = Path.Combine(pc, "weight-order-test.rmdblob");
+        string reversedToc = Path.Combine(pc, "weight-order-test.rmdtoc");
+        try
+        {
+            File.WriteAllBytes(reversedToc, FontPatch.Build(copy, regular, bold, Path.GetFileName(reversedBlob), reversedBlob));
+            var check = TocFile.Load(reversedToc); FontService.Verify(check);
+            Assert(FontPatch.Targets(check).All(e => check.Extract(e).data.AsSpan().SequenceEqual(FontPatch.IsBlack(e) ? bold : regular)), "Font weight mapping is independent of resource enumeration order");
+        }
+        finally { if (File.Exists(reversedToc)) File.Delete(reversedToc); if (File.Exists(reversedBlob)) File.Delete(reversedBlob); }
         File.Copy(baselineToc, Path.Combine(pc, "base-generic-development.rmdtoc"));
         Reject(() => FontService.Replace(destination, fontPath, lines.Add), "Conflicting development font package rejected");
         Assert(FontService.Hash(sourceToc) == initialHash, "Real game TOC remains unchanged");

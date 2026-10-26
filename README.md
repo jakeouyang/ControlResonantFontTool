@@ -16,10 +16,12 @@
 ## 使用方法
 
 1. 退出游戏，选择游戏根目录或 `data_pack2/pc`。
-2. 选择包含所需汉字的独立 TTF / OTF 字体，点击“开始替换”。Regular 与 Black 两个简中字体槽位使用同一字体。
+2. 分别选择同一字体的两个独立 TTF / OTF 文件：“正文常规体”选择 Regular / Normal，“标题粗体”选择 Bold / Heavy / Black。点击“开始替换”，两个文件分别写入游戏的 Regular 与 Black 简中字体槽位，保留粗细区别。
 3. 点击“还原字体”恢复当前游戏版本首次替换前的状态。请保留游戏 `data_pack2/pc` 下的 `_fonttool_backup` 文件夹。
 
 支持 TTF 和含 CFF 轮廓的 OTF，不支持 TTC 字体集合。字体结构校验不代表完整汉字覆盖，请在游戏中确认显示效果。
+
+请使用字体本身提供的不同字重文件。工具按所选文件原样写入，不会自动加粗；两个选项使用相同内容时会提示没有粗细区别。可直接在旧版替换结果上重新选择两份字体执行替换，无需手动还原。还原功能同时恢复两个槽位。
 
 ## 备份与兼容
 
@@ -44,7 +46,7 @@ dotnet publish -c Release
 
 ## 验证情况
 
-已通过隔离环境中的字体替换、重复替换、还原一致性、异常中断恢复及备份冲突检查，并由独立解析器验证导出内容。游戏内效果尚未在本仓库 CI 中验证，欢迎通过 [Issues](https://github.com/jakeouyang/ControlResonantFontTool/issues) 反馈。
+已通过隔离环境中的双字重分别回读、资源顺序无关性、无效粗体拒绝、重复替换、还原一致性、游戏更新兼容、异常中断恢复及备份冲突检查。此前单字体导出内容也由独立解析器验证。双字重的游戏内显示效果尚未验证，欢迎通过 [Issues](https://github.com/jakeouyang/ControlResonantFontTool/issues) 反馈。
 
 ## 许可证
 
@@ -65,10 +67,12 @@ Get the latest archive from [Releases](https://github.com/jakeouyang/ControlReso
 ## Usage
 
 1. Close the game, select its root folder or `data_pack2/pc`.
-2. Choose a standalone TTF/OTF font containing the required Chinese glyphs and click Replace. Both SC Regular and Black slots use the selected font.
+2. Select two standalone TTF/OTF files from the same font family: Regular / Normal for the body field (正文常规体), and Bold / Heavy / Black for the title field (标题粗体). Click Replace. They are written separately to the SC Regular and Black slots to preserve the weight difference.
 3. Click Restore to roll back to the state before the first replacement for the current game version. Keep the `_fonttool_backup` folder under `data_pack2/pc`.
 
 TTF and OTF with CFF outlines are supported; TTC collections are not. Structural validation does not guarantee full glyph coverage — verify in-game rendering.
+
+Use distinct weights supplied by the font family. Files are written unchanged; the tool does not synthesize bold. Identical font contents produce a warning that there will be no weight difference. You can replace an existing single-font patch directly with the two selected fonts. Restore recovers both slots together.
 
 ## Backup & Compatibility
 
@@ -93,7 +97,7 @@ The output is a self-contained single-file `ControlResonantFontTool.exe`. GitHub
 
 ## Validation
 
-Offline replacement, repeated replacement, restore consistency, interrupted-transaction recovery, and backup-conflict checks passed in an isolated environment, with exported content verified by an independent parser. In-game behavior is not covered by CI — feedback via [Issues](https://github.com/jakeouyang/ControlResonantFontTool/issues) is welcome.
+Isolated checks passed for distinct weight readback, resource-order independence, invalid bold rejection, repeated replacement, restore consistency, update compatibility, interrupted-transaction recovery, and backup conflicts. Earlier single-font exports were also verified by an independent parser. In-game rendering of the two-font patch has not been verified — feedback via [Issues](https://github.com/jakeouyang/ControlResonantFontTool/issues) is welcome.
 
 ## License
 
